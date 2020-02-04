@@ -4,17 +4,16 @@ A **Swift Package** to consume Open Weather Map (https://openweathermap.org) fre
 
 ## Getting started
 
-1. Get OpenWeatherMap API [key](https://openweathermap.org/appid)
+1. Get OpenWeatherMap API key (https://openweathermap.org/appid)
 2. Add package to your project (Xcode > File > Swift Packages > Add Package Dependency... )
 3. Update project target to reference OpenWeatherMap library (Targets > Frameworks, Libraries, and Embedded Content > touch "+" button)
 4. Add `import OpenWeatherClient` to your Swift file
 
 ## Usage
 
-Pass your app id (https://openweathermap.org/appid) to the OpenWeatherClient in your `AppDelegate.swift` file, on launch:
+Pass your app id to the OpenWeatherClient in your `AppDelegate.swift` file, on launch:
 
 ```swift
-
     #import OpenWeatherClient
     
     ...
