@@ -14,7 +14,7 @@ A **Swift Package** to consume Open Weather Map (https://openweathermap.org) fre
 Pass your app id to the OpenWeatherClient in your `AppDelegate.swift` file, on launch:
 
 ```swift
-    #import OpenWeatherClient
+    import OpenWeatherClient
     
     ...
     
