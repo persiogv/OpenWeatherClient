@@ -1,6 +1,6 @@
 # OpenWeatherClient
 
-A very simple **Swift Package** to consume Open Weather Map (https://openweathermap.org) free APIs (named Current weather data, and Hourly forecast).
+A very simple **Swift Package** to consume OpenWeatherMap (https://openweathermap.org) free APIs (named Current weather data, and Hourly forecast).
 
 ## Getting started
 
