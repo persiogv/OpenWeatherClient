@@ -15,5 +15,5 @@ protocol ApiRequesterClient {
     /// - Parameters:
     ///   - request: Your URLRequest
     ///   - completion: A closure called when the request is finished
-    func request(with request: URLRequest, completion: @escaping ApiProviderRequester.Completion)
+    func request(with request: URLRequest, completion: @escaping ApiProvider.Completion)
 }

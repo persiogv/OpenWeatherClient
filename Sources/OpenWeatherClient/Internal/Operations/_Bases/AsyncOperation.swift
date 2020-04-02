@@ -6,7 +6,7 @@
 //  Copyright © 2019 Persio Vieira. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 class AsyncOperation: Operation {
     public enum State: String {

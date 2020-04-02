@@ -1,5 +1,5 @@
 //
-//  ApiProviderRequesterProtocol.swift
+//  RequesterProtocol.swift
 //  OpenWeatherClient
 //
 //  Created by Pérsio on 26/04/19.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol ApiProviderRequesterProtocol {
+protocol RequesterProtocol {
     
     /// Preforms an HTTP request
     ///
@@ -19,8 +19,8 @@ protocol ApiProviderRequesterProtocol {
     ///   - headers: HTTP headers
     ///   - completion: Callback completion handler
     func performRequest(url: URL,
-                        method: HTTPClient.HTTPMethod,
+                        method: HTTPClient.Method,
                         body: Data?,
-                        headers: [HTTPClient.HTTPHeader],
+                        headers: [HTTPClient.Header],
                         completion: @escaping ApiProvider.Completion)
 }

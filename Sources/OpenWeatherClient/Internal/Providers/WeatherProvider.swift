@@ -34,7 +34,7 @@ class WeatherProvider: ApiProvider {
     
     private let appId: String
     
-    required init(requester: ApiProviderRequesterProtocol = ApiProviderRequester(), appId: String) {
+    required init(requester: RequesterProtocol = Requester(), appId: String) {
         self.appId = appId
         super.init(requester: requester, baseUrl: Constants.baseUrl)
     }
@@ -43,33 +43,47 @@ class WeatherProvider: ApiProvider {
 // MARK: - Private
 extension WeatherProvider {
     
-    private func handleWeatherResponse(_ response: @escaping Response, cacheKey: String, cacheTime: TimeInterval, completion: @escaping WeatherCompletion) {
-        completion {
-            let data = try response()
-            
+    private func handleWeatherResult(_ result: ApiResult, cacheKey: String, cacheTime: TimeInterval, completion: @escaping WeatherCompletion) {
+        
+        switch result {
+        case .success(let data):
             if cacheTime > 0 {
                 _ = Cacher.persistent.cacheValue(data, toKey: cacheKey, expires: .seconds(cacheTime))
             }
             
-            return try JSONDecoder().decode(Weather.self, from: data)
+            do {
+                let weather = try JSONDecoder().decode(Weather.self, from: data)
+                return completion(.success(weather))
+            }
+            catch {
+                return completion(.failure(error))
+            }
+        case .failure:
+            return completion(.failure(ApiProviderError.invalidData))
         }
     }
     
-    private func handleForecastResponse(_ response: @escaping Response, cacheKey: String, cacheTime: TimeInterval, completion: @escaping ForecastCompletion) {
-        completion {
-            let data = try response()
-            
+    private func handleForecastResult(_ result: ApiResult, cacheKey: String, cacheTime: TimeInterval, completion: @escaping ForecastCompletion) {
+        
+        switch result {
+        case .success(let data):
             if cacheTime > 0 {
                 _ = Cacher.persistent.cacheValue(data, toKey: cacheKey, expires: .seconds(cacheTime))
             }
             
-            if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any], let list = json[Constants.Keys.list] {
-                let listData = try JSONSerialization.data(withJSONObject: list, options: [])
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any], let list = json[Constants.Keys.list] {
+                    let listData = try JSONSerialization.data(withJSONObject: list, options: [])
+                    let forecast = try JSONDecoder().decode(Forecast.self, from: listData)
+                    return completion(.success(forecast))
+                }
                 
-                return try JSONDecoder().decode([Weather].self, from: listData)
+                return completion(.failure(ApiProviderError.invalidData))
+            } catch {
+                return completion(.failure(error))
             }
-            
-            throw ApiProviderError.invalidData
+        case .failure:
+            return completion(.failure(ApiProviderError.invalidData))
         }
     }
     
@@ -106,13 +120,13 @@ extension WeatherProvider: WeatherCoreProtocol {
         let cacheKey = "weather:\(latitude);\(longitude);\(language.rawValue);\(units.rawValue)"
         
         if let data = Cacher.persistent.fetchValue(ofType: Data.self, fromKey: cacheKey) {
-            let response: Response = { return data }
-            return handleWeatherResponse(response, cacheKey: cacheKey, cacheTime: 0, completion: completion)
+            let result: ApiResult = .success(data)
+            return handleWeatherResult(result, cacheKey: cacheKey, cacheTime: 0, completion: completion)
         }
-
-        GET(path: Constants.Paths.weather, parameters: parameters) { [weak self] (response) in
+        
+        GET(path: Constants.Paths.weather, parameters: parameters) { [weak self] result in
             guard let self = self else { return }
-            self.handleWeatherResponse(response, cacheKey: cacheKey, cacheTime: cacheTime, completion: completion)
+            self.handleWeatherResult(result, cacheKey: cacheKey, cacheTime: cacheTime, completion: completion)
         }
     }
     
@@ -127,13 +141,13 @@ extension WeatherProvider: WeatherCoreProtocol {
         let cacheKey = "forecast:\(latitude);\(longitude);\(language.rawValue);\(units.rawValue)"
         
         if let data = Cacher.persistent.fetchValue(ofType: Data.self, fromKey: cacheKey) {
-            let response: Response = { return data }
-            return handleForecastResponse(response, cacheKey: cacheKey, cacheTime: 0, completion: completion)
+            let result: ApiResult = .success(data)
+            return handleForecastResult(result, cacheKey: cacheKey, cacheTime: 0, completion: completion)
         }
         
-        GET(path: Constants.Paths.forecast, parameters: parameters) { [weak self] (response) in
+        GET(path: Constants.Paths.forecast, parameters: parameters) { [weak self] result in
             guard let self = self else { return }
-            self.handleForecastResponse(response, cacheKey: cacheKey, cacheTime: cacheTime, completion: completion)
+            self.handleForecastResult(result, cacheKey: cacheKey, cacheTime: cacheTime, completion: completion)
         }
     }
 }

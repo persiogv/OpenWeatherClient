@@ -21,10 +21,10 @@ class WeatherManager: Manager {
 extension WeatherManager: WeatherCoreProtocol {
     
     func fetchWeather(latitude: Double, longitude: Double, units: Units, language: Language, cacheTime: TimeInterval, completion: @escaping WeatherCompletion) {
-        let callback: WeatherCompletion = { result in
-            OperationQueue.main.addOperation {
-                completion(result)
-            }
+        let callback: WeatherCompletion = { [weak self] result in
+            guard let self = self else { return }
+            let operation = BlockOperation { completion(result) }
+            self.executeInMainQueue(operation: operation)
         }
         
         let operation = WeatherOperation(provider: provider, latitude: latitude, longitude: longitude, units: units, language: language, cacheTime: cacheTime, completion: callback)
@@ -33,10 +33,10 @@ extension WeatherManager: WeatherCoreProtocol {
     }
     
     func fetchForecast(latitude: Double, longitude: Double, units: Units, language: Language, cacheTime: TimeInterval, completion: @escaping ForecastCompletion) {
-        let callback: ForecastCompletion = { result in
-            OperationQueue.main.addOperation {
-                completion(result)
-            }
+        let callback: ForecastCompletion = { [weak self] result in
+            guard let self = self else { return }
+            let operation = BlockOperation { completion(result) }
+            self.executeInMainQueue(operation: operation)
         }
         
         let operation = ForecastOperation(provider: provider, latitude: latitude, longitude: longitude, units: units, language: language, cacheTime: cacheTime, completion: callback)

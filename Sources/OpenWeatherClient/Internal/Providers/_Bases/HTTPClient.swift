@@ -10,10 +10,10 @@ import Foundation
 
 struct HTTPClient {
     
-    typealias Completion = (@escaping () throws -> (data: Data?, response: URLResponse)) -> Void
-    typealias HTTPHeader = (field: String, value: String)
+    typealias Completion = (Result<(data: Data, response: URLResponse), Error>) -> Void
+    typealias Header = (field: String, value: String)
     
-    enum HTTPMethod: String {
+    enum Method: String {
         case GET
         case POST
         case HEAD
@@ -24,6 +24,7 @@ struct HTTPClient {
     enum HTTPClientError: Error {
         case invalidMethod
         case invalidResponse
+        case invalidData
         case noInternetConnection
         case serverError(code: Int, data: Data?)
         case unhandled(error: Error)
@@ -53,10 +54,10 @@ extension HTTPClient {
     ///   - headers: Your HTTP headers, optional
     ///   - completion: A closure called when the request is finished
     func request(url: URL,
-                 method: HTTPMethod,
+                 method: Method,
                  session: URLSession = URLSession.shared,
                  body: Data? = nil,
-                 headers: [HTTPHeader]? = nil,
+                 headers: [Header]? = nil,
                  completion: @escaping Completion) {
         let request = URLRequest(url: url, method: method, body: body, headers: headers)
         
@@ -94,14 +95,12 @@ extension HTTPClient {
     ///   - session: Your URLSession, optional
     ///   - completion: A closure called when the upload is finished
     func upload(url: URL,
-                method: HTTPMethod,
+                method: Method,
                 data: Data,
                 session: URLSession = URLSession.shared,
                 completion: @escaping Completion) {
         if method != .POST || method != .PUT {
-            return completion {
-                throw HTTPClientError.invalidMethod
-            }
+            return completion(.failure(HTTPClientError.invalidMethod))
         }
         
         let request = URLRequest(url: url, method: method, body: nil, headers: nil)
@@ -133,7 +132,7 @@ extension HTTPClient {
     ///   - session: Your URLSession (you must adopt its delegate protocols to get notified)
     /// - Throws: An error will be thrown if the given method is different of POST or PUT
     func upload(url: URL,
-                method: HTTPMethod,
+                method: Method,
                 data: Data,
                 session: URLSession) throws {
         if method != .POST || method != .PUT {
@@ -220,36 +219,33 @@ private extension HTTPClient {
                         completion: Completion) {
         guard let error = error else {
             guard case let response as HTTPURLResponse = response else {
-                return completion {
-                    throw HTTPClientError.invalidResponse
-                }
+                return completion(.failure(HTTPClientError.invalidResponse))
+            }
+            
+            guard let data = data else {
+                return completion(.failure(HTTPClientError.invalidData))
             }
             
             if 200...299 ~= response.statusCode {
-                return completion {
-                    return (data, response)
-                }
+                return completion(.success((data, response)))
             }
             
-            return completion {
-                throw HTTPClientError.serverError(code: response.statusCode, data: data)
+            return completion(.failure(HTTPClientError.serverError(code: response.statusCode, data: data)))
+        }
+        
+        if let error = error as? URLError {
+            if error.code == .networkConnectionLost || error.code == .notConnectedToInternet {
+                return completion(.failure(HTTPClientError.noInternetConnection))
             }
         }
         
-        completion {
-            if let error = error as? URLError {
-                if error.code == .networkConnectionLost || error.code == .notConnectedToInternet {
-                    throw HTTPClientError.noInternetConnection
-                }
-            }
-            throw HTTPClientError.unhandled(error: error)
-        }
+        return completion(.failure(HTTPClientError.unhandled(error: error)))
     }
 }
 
 private extension URLRequest {
     
-    init(url: URL, method: HTTPClient.HTTPMethod?, body: Data?, headers: [HTTPClient.HTTPHeader]?) {
+    init(url: URL, method: HTTPClient.Method?, body: Data?, headers: [HTTPClient.Header]?) {
         self.init(url: url)
         self.httpMethod = method?.rawValue
         self.httpBody = body

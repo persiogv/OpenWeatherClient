@@ -10,8 +10,8 @@ import Foundation
 
 class ApiProvider {
     
-    typealias Response = () throws -> Data
-    typealias Completion = (@escaping Response) -> Void
+    typealias ApiResult = Result<Data, Error>
+    typealias Completion = (ApiResult) -> Void
     typealias Parameter = (name: String, value: String)
     
     enum ApiProviderError: Error {
@@ -20,10 +20,10 @@ class ApiProvider {
         case unhandled(error: Error)
     }
     
-    private let requester: ApiProviderRequesterProtocol
+    private let requester: RequesterProtocol
     private let baseUrl: String
     
-    init(requester: ApiProviderRequesterProtocol = ApiProviderRequester(), baseUrl: String) {
+    init(requester: RequesterProtocol = Requester(), baseUrl: String) {
         self.requester = requester
         self.baseUrl = baseUrl
     }
@@ -36,7 +36,7 @@ class ApiProvider {
     ///   - headers: HTTP headers
     ///   - parameters: Parameters to send within the request
     ///   - completion: Callback completion handler
-    func GET(path: String, body: Data?, headers: [HTTPClient.HTTPHeader], parameters: [Parameter], completion: @escaping Completion) {
+    func GET(path: String, body: Data?, headers: [HTTPClient.Header], parameters: [Parameter], completion: @escaping ApiProvider.Completion) {
         var components = URLComponents(string: baseUrl.appending(path))
         var queryItems: [URLQueryItem] = []
         
@@ -48,14 +48,12 @@ class ApiProvider {
         components?.queryItems = queryItems
         
         guard let url = components?.url else {
-            return completion {
-                throw ApiProviderError.invalidUrl
-            }
+            return completion(.failure(ApiProviderError.invalidUrl))
         }
         
-        requester.performRequest(url: url, method: HTTPClient.HTTPMethod.GET, body: body, headers: headers) { [weak self] (response) in
+        requester.performRequest(url: url, method: .GET, body: body, headers: headers) { [weak self] result in
             guard let self = self else { return }
-            self.handleResponse(response: response, completion: completion)
+            self.handleResult(result: result, completion: completion)
         }
     }
     
@@ -66,16 +64,14 @@ class ApiProvider {
     ///   - body: Optional data to send within the request
     ///   - headers: HTTPHeaders
     ///   - completion: Callback completion handler
-    func POST(path: String, body: Data?, headers: [HTTPClient.HTTPHeader], completion: @escaping Completion) {
+    func POST(path: String, body: Data?, headers: [HTTPClient.Header], completion: @escaping Completion) {
         guard let url = URL(string: baseUrl.appending(path)) else {
-            return completion {
-                throw ApiProviderError.invalidUrl
-            }
+            return completion(.failure(ApiProviderError.invalidUrl))
         }
         
-        requester.performRequest(url: url, method: HTTPClient.HTTPMethod.POST, body: body, headers: headers) { [weak self] (response) in
+        requester.performRequest(url: url, method: .POST, body: body, headers: headers) { [weak self] result in
             guard let self = self else { return }
-            self.handleResponse(response: response, completion: completion)
+            self.handleResult(result: result, completion: completion)
         }
     }
 }
@@ -83,20 +79,12 @@ class ApiProvider {
 // MARK: - Private
 private extension ApiProvider {
     
-    func handleResponse(response: @escaping Response, completion: @escaping Completion) {
-        completion {
-            do {
-                return try response()
-            } catch let error as HTTPClient.HTTPClientError {
-                switch error {
-                case .unhandled(let error):
-                    throw ApiProviderError.unhandled(error: error)
-                default:
-                    throw error
-                }
-            } catch {
-                throw error
-            }
+    func handleResult(result: ApiResult, completion: @escaping Completion) {
+        switch result {
+        case .success(let data):
+            return completion(.success(data))
+        case .failure(let error):
+            return completion(.failure(error))
         }
     }
 }

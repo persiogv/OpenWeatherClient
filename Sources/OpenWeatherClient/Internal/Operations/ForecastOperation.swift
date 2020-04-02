@@ -34,13 +34,13 @@ class ForecastOperation: AsyncOperation {
         provider.fetchForecast(latitude: latitude, longitude: longitude, units: units, language: language, cacheTime: cacheTime) { [weak self] result in
             guard let self = self else { return }
             
-            do {
-                let forecast = try result()
-                self.completion { forecast }
+            switch result {
+            case .success(let forecast):
                 self.finish()
-            } catch {
-                self.completion { throw error }
+                return self.completion(.success(forecast))
+            case .failure(let error):
                 self.finish()
+                return self.completion(.failure(error))
             }
         }
     }

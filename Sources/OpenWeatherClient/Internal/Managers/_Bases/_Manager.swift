@@ -15,6 +15,10 @@ class Manager: OperationQueue {
         name = String(describing: self)
     }
     
+    func executeInMainQueue(operation: Operation) {
+        OperationQueue.main.addOperation(operation)
+    }
+    
     deinit {
         cancelAllOperations()
     }

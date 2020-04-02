@@ -8,13 +8,14 @@
 
 import Foundation
 
-public typealias WeatherCompletion = (@escaping () throws -> Weather) -> Void
-public typealias ForecastCompletion = (@escaping () throws -> [Weather]) -> Void
+public typealias Forecast = [Weather]
+public typealias WeatherCompletion = (Result<Weather, Error>) -> Void
+public typealias ForecastCompletion = (Result<Forecast, Error>) -> Void
 
 public class OpenWeatherClient {
     
     private var appId = String()
-    private lazy var manager = WeatherManager(provider: WeatherProvider(requester: ApiProviderRequester(), appId: appId))
+    private lazy var manager = WeatherManager(provider: WeatherProvider(requester: Requester(), appId: appId))
     public static let shared = OpenWeatherClient()
     
     private init() {}
