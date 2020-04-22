@@ -2,12 +2,16 @@
 
 A very simple **Swift Package** to consume OpenWeatherMap (https://openweathermap.org) free APIs (named Current weather data, and Hourly forecast).
 
+## Advice
+
+This is a work in progress project. New features are being added. Contributions are welcome!
+
 ## Getting started
 
 1. Get OpenWeatherMap API key (https://openweathermap.org/appid)
 2. Add package to your project (Xcode > File > Swift Packages > Add Package Dependency...). Point to branch `master`.
 3. Update project target to reference OpenWeatherClient library (Targets > Frameworks, Libraries, and Embedded Content > touch "+" button)
-4. Add `import OpenWeatherClient` to your Swift file
+4. Add `import OpenWeatherClient` in your Swift file
 
 ## Usage
 

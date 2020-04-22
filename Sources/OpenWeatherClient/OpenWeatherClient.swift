@@ -12,7 +12,7 @@ public typealias Forecast = [Weather]
 public typealias WeatherCompletion = (Result<Weather, Error>) -> Void
 public typealias ForecastCompletion = (Result<Forecast, Error>) -> Void
 
-public class OpenWeatherClient {
+public final class OpenWeatherClient {
     
     private var appId = String()
     private lazy var manager = WeatherManager(provider: WeatherProvider(requester: Requester(), appId: appId))

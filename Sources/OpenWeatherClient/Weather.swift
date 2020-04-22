@@ -36,7 +36,7 @@ public struct Weather: Codable {
         var icon: String
     }
     
-    enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey {
         case date
         case minTemp
         case maxTemp
